@@ -6,6 +6,7 @@ import android.content.Intent
 import android.os.Bundle
 import android.speech.RecognizerIntent
 import android.util.Log
+import android.widget.Toast
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.result.contract.ActivityResultContracts
@@ -19,12 +20,19 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import com.example.mytemi3.ui.ApiService
 import com.example.mytemi3.ui.Book
+import com.robotemi.sdk.Robot
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.TimeoutCancellationException
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
+import kotlinx.coroutines.withTimeout
 import retrofit2.Retrofit
 import retrofit2.converter.gson.GsonConverterFactory
 import java.util.*
+
+
+
 
 class MainActivity : ComponentActivity() {
 
@@ -33,6 +41,8 @@ class MainActivity : ComponentActivity() {
     private var currentPage = mutableStateOf(1)
     private var totalPages = mutableStateOf(1)
     private var savedKeyword = mutableStateOf("") // 이전 키워드 저장
+
+    val isLoading = mutableStateOf(false) //로딩
 
 
     // Google STT Launcher
@@ -58,16 +68,28 @@ class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
+
+        //최종삭제
+        recognizedText = "공룡찾아줘"
+        savedKeyword.value = "공룡찾아줘"
+        currentPage.value = 1
+
+        fetchDataFromServer("공룡찾아줘")
+
+
         setContent {
             VoiceToTextScreen(
                 spokenText = recognizedText,  // ✅ speechText.value 대신 recognizedText 사용
                 books = bookList,
                 currentPage = currentPage.value,
                 totalPages = totalPages.value,
+                isLoading = isLoading.value,
                 onStartListening = { startVoiceRecognition() }, // ✅ startListening() → startVoiceRecognition()
                 onPrevPage = { prevPage() },
                 onNextPage = { nextPage() },
-                context = this
+                onReset = { resetAll() },
+                context = this,
+
             )
         }
     }
@@ -98,23 +120,46 @@ class MainActivity : ComponentActivity() {
 
         CoroutineScope(Dispatchers.IO).launch {
             try {
-                val response = apiService.searchBook(chat)
+                withContext(Dispatchers.Main) {
+                    isLoading.value = true // ✅ 로딩 시작
+                }
+
+                // ✅ 5초 제한 시간 설정
+                val response = withTimeout(5000L) {
+                    apiService.searchBook(chat)
+                }
 
                 val books = response.books
-                    .filterNotNull()  // null 제거
-                    .filter { book -> book.bookname.isNotEmpty() } // 빈 객체 필터링
+                    .filterNotNull()
+                    .filter { book -> book.bookname.isNotEmpty() }
 
                 Log.d("DEBUG", "초기 검색 결과: $books")
 
-                bookList.clear()
-                bookList.addAll(books)
+                withContext(Dispatchers.Main) {
+                    bookList.clear()
+                    bookList.addAll(books)
 
-                savedKeyword.value = response.keyword
-                currentPage.value = response.currentPage
-                totalPages.value = response.totalPages
+                    savedKeyword.value = response.keyword
+                    currentPage.value = response.currentPage
+                    totalPages.value = response.totalPages
+                }
+
+            } catch (e: TimeoutCancellationException) {
+                Log.e("Timeout", "요청이 5초 안에 응답되지 않았습니다.")
+                withContext(Dispatchers.Main) {
+                    Toast.makeText(applicationContext, "5초 이상 걸렸습니다. 다시 검색해주세요.", Toast.LENGTH_SHORT).show()
+                }
 
             } catch (e: Exception) {
                 Log.e("Network Error", "오류 발생: ${e.message}")
+                withContext(Dispatchers.Main) {
+                    Toast.makeText(applicationContext, "오류가 발생했습니다.", Toast.LENGTH_SHORT).show()
+                }
+
+            } finally {
+                withContext(Dispatchers.Main) {
+                    isLoading.value = false // ✅ 로딩 종료
+                }
             }
         }
     }
@@ -134,29 +179,40 @@ class MainActivity : ComponentActivity() {
 
         CoroutineScope(Dispatchers.IO).launch {
             try {
-                val response = apiService.searchBookByKeyword(savedKeyword.value, pageNum)
+                isLoading.value = true
 
-                // Book 리스트가 null이거나 빈 객체일 경우 제거
+                // ⏱ 5초 안에 응답 없으면 TimeoutCancellationException 발생
+                val response = withTimeout(5000L) {
+                    apiService.searchBookByKeyword(savedKeyword.value, pageNum)
+                }
+
                 val books = response.books
-                    .filterNotNull()                      // null 제거
-                    .filter { book ->                     // 빈 객체 필터링
-                        book.bookname.isNotEmpty()
-                    }
+                    .filterNotNull()
+                    .filter { book -> book.bookname.isNotEmpty() }
 
-                Log.d("DEBUG", "페이지 ${pageNum} 결과: $books")
+                withContext(Dispatchers.Main) {
+                    bookList.clear()
+                    bookList.addAll(books)
+                    currentPage.value = response.currentPage
+                    totalPages.value = response.totalPages
+                }
 
-                bookList.clear()
-                bookList.addAll(books)
-
-                // currentPage 및 totalPages 처리
-                currentPage.value = response.currentPage
-                totalPages.value = response.totalPages
-
-                // 디버깅 로그 추가
-                Log.d("DEBUG", "페이지 네이션 응답 - currentPage: ${currentPage.value}, totalPages: ${totalPages.value}")
+            } catch (e: TimeoutCancellationException) {
+                Log.e("Network Timeout", "요청 시간이 초과되었습니다.")
+                withContext(Dispatchers.Main) {
+                    Toast.makeText(applicationContext, "5초 이상 걸렸습니다. 다시 검색해주세요.", Toast.LENGTH_SHORT).show()
+                }
 
             } catch (e: Exception) {
                 Log.e("Network Error", "오류 발생: ${e.message}")
+                withContext(Dispatchers.Main) {
+                    Toast.makeText(applicationContext, "오류가 발생했습니다.", Toast.LENGTH_SHORT).show()
+                }
+
+            } finally {
+                withContext(Dispatchers.Main) {
+                    isLoading.value = false
+                }
             }
         }
     }
@@ -175,5 +231,12 @@ class MainActivity : ComponentActivity() {
             fetchDataByKeyword(currentPage.value)
         }
     }
-
+    private fun resetAll() {
+        recognizedText = "버튼을 눌러 말하세요."
+        bookList.clear()
+        currentPage.value = 1
+        totalPages.value = 1
+        savedKeyword.value = ""
+        isLoading.value = false
+    }
 }

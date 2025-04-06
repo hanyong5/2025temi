@@ -27,15 +27,15 @@ fun BookItem(book: Book, onClick: () -> Unit = {}) {
     Card(
         modifier = Modifier
             .width(310.dp)
-            .padding(8.dp)
-            .border(2.dp, Color.Gray, shape = RoundedCornerShape(12.dp))
+            .padding(10.dp)
+            .border(4.dp, Color.Gray, shape = RoundedCornerShape(12.dp))
             .clickable { onClick() },  // 클릭 이벤트 추가
         shape = RoundedCornerShape(12.dp),
         colors = CardDefaults.cardColors(containerColor = Color.White)
     ) {
         Column(
-            horizontalAlignment = Alignment.CenterHorizontally,
-            modifier = Modifier.padding(8.dp)
+//            horizontalAlignment = Alignment.CenterHorizontally,
+            modifier = Modifier.padding(20.dp)
         ) {
             // 이미지 로딩
 //            val imageUrl = if (book.bImg.isNotEmpty()) book.bImg else "https://via.placeholder.com/150"
@@ -50,7 +50,7 @@ fun BookItem(book: Book, onClick: () -> Unit = {}) {
                 contentScale = ContentScale.Crop
             )
 
-            Spacer(modifier = Modifier.height(8.dp))
+            Spacer(modifier = Modifier.height(12.dp))
 
             // 책 제목
             Text(
@@ -61,13 +61,12 @@ fun BookItem(book: Book, onClick: () -> Unit = {}) {
                 textAlign = TextAlign.Left
             )
 
-            Spacer(modifier = Modifier.height(4.dp))
+            Spacer(modifier = Modifier.height(20.dp))
 
             // 저자 정보
             Text(
-                text = "저자_${book.author}",
+                text = "[저자] ${book.author}",
                 fontSize = 18.sp,
-                fontWeight = FontWeight.Bold,
                 maxLines = 1,
                 textAlign = TextAlign.Left
             )
@@ -76,9 +75,8 @@ fun BookItem(book: Book, onClick: () -> Unit = {}) {
 
             // 위치 정보
             Text(
-                text = "위치_${book.studyRoom}",
+                text = "[위치] ${book.studyRoom}",
                 fontSize = 18.sp,
-                fontWeight = FontWeight.Bold,
                 maxLines = 1,
                 textAlign = TextAlign.Left
             )
@@ -86,21 +84,17 @@ fun BookItem(book: Book, onClick: () -> Unit = {}) {
 
             // 출판사 정보
             Text(
-                text = "출판사_${book.publisher}",
+                text = "[출판사] ${book.publisher}",
                 fontSize = 18.sp,
-                fontWeight = FontWeight.Bold,
                 maxLines = 1,
                 textAlign = TextAlign.Left
             )
             Spacer(modifier = Modifier.height(4.dp))
 
-
-
             // 상태 정보
             Text(
-                text = "상태: ${book.state}",
+                text = "[상태] ${book.state}",
                 fontSize = 18.sp,
-                fontWeight = FontWeight.Bold,
                 textAlign = TextAlign.Left
             )
         }
