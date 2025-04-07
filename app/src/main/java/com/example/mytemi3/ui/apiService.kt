@@ -15,6 +15,6 @@ interface ApiService {
     @GET("keyword_book_search")
     suspend fun searchBookByKeyword(
         @Query("keyword") keyword: String,
-        @Query("pageNum") pageNum: Int
+        @Query("pageNum") pageNum: Int,
     ): BookResponse
 }

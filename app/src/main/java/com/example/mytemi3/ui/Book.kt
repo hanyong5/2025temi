@@ -5,7 +5,9 @@ data class BookResponse(
     val books: List<Book> = emptyList(),  // 최상위 필드
     val currentPage: Int = 1,
     val totalPages: Int = 1,
-    val totalItems: Int = 0
+    val totalItems: Int = 0,
+    val type: Int = 1,
+    var message:String =""
 )
 
 data class Book(

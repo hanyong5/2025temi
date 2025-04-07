@@ -2,6 +2,8 @@ package com.example.mytemi3
 
 
 import android.content.Context
+import android.speech.tts.TextToSpeech
+import androidx.compose.animation.core.animateDpAsState
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -82,33 +84,65 @@ fun VoiceToTextScreen(
             Column(
                 modifier = Modifier
                     .fillMaxSize()
-                    .padding(top = 120.dp),
-                horizontalAlignment = Alignment.CenterHorizontally
+                    .padding(top = 120.dp)
             ) {
-                // 🔍 **음성 인식 시작 버튼**
+                // 🔄 애니메이션 상태
+                val offsetX by animateDpAsState(
+                    targetValue = if (showResults) 700.dp else 300.dp,
+                    label = "offsetX"
+                )
+                val offsetY by animateDpAsState(
+                    targetValue = if (showResults) 0.dp else 100.dp,
+                    label = "offsetY"
+                )
+                val boxWidth by animateDpAsState(
+                    targetValue = if (showResults) 300.dp else 500.dp,
+                    label = "width"
+                )
+                val boxHeight by animateDpAsState(
+                    targetValue = if (showResults) 77.dp else 400.dp,
+                    label = "height"
+                )
+
+                val imageRes = if (showResults) {
+                    R.drawable.search_icon01 // 검색 후
+                } else {
+                    R.drawable.search_icon02 // 검색 전
+                }
+
                 Box(
                     modifier = Modifier
-                        .width(300.dp)
-                        .height(77.dp)
-//                        .offset(x = 300.dp, y = 100.dp) // 📌 위치 지정
+                        .width(boxWidth)
+                        .height(boxHeight)
+                        .offset(x = offsetX, y = offsetY)
                         .clickable {
                             onStartListening()
                             showResults = true
                         }
                 ) {
                     Image(
-                        painter = painterResource(id = R.drawable.search_icon01),
+                        painter = painterResource(id = imageRes),
                         contentDescription = "도서검색하기",
                         contentScale = ContentScale.Crop,
                         modifier = Modifier.fillMaxSize()
                     )
                 }
 
-                Text(text = spokenText, fontSize = 18.sp)
+//                Text(text = spokenText, fontSize = 18.sp)
+
+                Box(
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    Text(
+                        text = spokenText,
+                        fontSize = 18.sp,
+                        modifier = Modifier.align(Alignment.Center)
+                    )
+                }
                 Spacer(modifier = Modifier.height(10.dp))
 
                 // 🔍 **검색 결과 표시**
-                if (showResults) {
+                if (showResults && books.isNotEmpty()) {
                     Box(
                         modifier = Modifier
                             .fillMaxWidth()

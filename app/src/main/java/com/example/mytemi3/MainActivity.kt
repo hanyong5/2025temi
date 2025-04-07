@@ -132,8 +132,14 @@ class MainActivity : ComponentActivity() {
                 val books = response.books
                     .filterNotNull()
                     .filter { book -> book.bookname.isNotEmpty() }
+                val type = response.type
+                val message = response.message
 
                 Log.d("DEBUG", "초기 검색 결과: $books")
+                Log.d("DEBUG", "초기 검색 결과: $type")
+                Log.d("DEBUG", "초기 검색 결과: $message")
+
+
 
                 withContext(Dispatchers.Main) {
                     bookList.clear()
