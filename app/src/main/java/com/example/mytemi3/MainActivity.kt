@@ -41,6 +41,8 @@ class MainActivity : ComponentActivity() {
     private var currentPage = mutableStateOf(1)
     private var totalPages = mutableStateOf(1)
     private var savedKeyword = mutableStateOf("") // 이전 키워드 저장
+    val responseType = mutableStateOf(0)
+    val responseMessage = mutableStateOf("")
 
     val isLoading = mutableStateOf(false) //로딩
 
@@ -89,6 +91,8 @@ class MainActivity : ComponentActivity() {
                 onNextPage = { nextPage() },
                 onReset = { resetAll() },
                 context = this,
+                type = responseType.value,
+                message = responseMessage.value
 
             )
         }
@@ -99,7 +103,7 @@ class MainActivity : ComponentActivity() {
         val intent = Intent(RecognizerIntent.ACTION_RECOGNIZE_SPEECH).apply {
             putExtra(RecognizerIntent.EXTRA_LANGUAGE_MODEL, RecognizerIntent.LANGUAGE_MODEL_FREE_FORM)
             putExtra(RecognizerIntent.EXTRA_LANGUAGE, "ko-KR")
-            putExtra(RecognizerIntent.EXTRA_PROMPT, "책 제목을 말씀해 주세요...")
+            putExtra(RecognizerIntent.EXTRA_PROMPT, "대화 내용을 말씀해 주세요...")
         }
 
         try {
@@ -148,6 +152,8 @@ class MainActivity : ComponentActivity() {
                     savedKeyword.value = response.keyword
                     currentPage.value = response.currentPage
                     totalPages.value = response.totalPages
+                    responseType.value = response.type
+                    responseMessage.value = response.message
                 }
 
             } catch (e: TimeoutCancellationException) {

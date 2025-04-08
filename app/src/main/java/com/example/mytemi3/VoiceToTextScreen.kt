@@ -6,11 +6,14 @@ import android.speech.tts.TextToSpeech
 import androidx.compose.animation.core.animateDpAsState
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -32,6 +35,7 @@ import androidx.compose.ui.window.DialogProperties
 import coil.compose.rememberAsyncImagePainter
 import com.example.mytemi3.ui.Book
 import com.example.mytemi3.ui.BookItem
+import kotlinx.coroutines.delay
 
 
 @Composable
@@ -45,21 +49,38 @@ fun VoiceToTextScreen(
     onPrevPage: () -> Unit,
     onNextPage: () -> Unit,
     onReset: () -> Unit, // ✅ 여기 추가!
-    context: Context // ✅ Temi 이동을 위한 Context 추가
+    context: Context, // ✅ Temi 이동을 위한 Context 추가
+    type: Int,
+    message: String,
 
 ) {
     var selectedBook by remember { mutableStateOf<Book?>(null) } // ✅ 선택한 책 정보 저장
     var showResults by remember { mutableStateOf(false) } // ✅ 검색 후 결과 표시 여부 저장
+    val PeachBorder = Color(0xFFFFE3B7)
+    val scrollState = rememberScrollState()
+
+    val typingMessage = remember { mutableStateOf("") }
+
+    LaunchedEffect(message) {
+        typingMessage.value = ""
+        message.forEach { char ->
+            delay(100L)
+            typingMessage.value += char
+        }
+    }
 
     if (isLoading) {
         Dialog(onDismissRequest = { }) { // 백버튼 등으로 닫히지 않게
             Box(
+
                 modifier = Modifier
                     .size(150.dp)
                     .background(Color.White, shape = RoundedCornerShape(16.dp)),
                 contentAlignment = Alignment.Center
             ) {
                 Column(horizontalAlignment = Alignment.CenterHorizontally) {
+
+
                     CircularProgressIndicator(
                         modifier = Modifier.size(48.dp),
                         color = Color.Red,
@@ -142,24 +163,31 @@ fun VoiceToTextScreen(
                 Spacer(modifier = Modifier.height(10.dp))
 
                 // 🔍 **검색 결과 표시**
-                if (showResults && books.isNotEmpty()) {
+//                if (showResults && books.isNotEmpty()) {
+                    if (showResults) {
+
+
                     Box(
                         modifier = Modifier
                             .fillMaxWidth()
                             .padding(26.dp)
-
 //                            .offset(x = 10.dp, y = -350.dp)
                             .background(Color.White, RoundedCornerShape(12.dp))
+                            .shadow(5.dp, RoundedCornerShape(12.dp)) // 그림자 추가
+                            .border(
+                                width = 16.dp,
+                                color = PeachBorder,
+                                shape = RoundedCornerShape(12.dp) // background와 동일한 shape으로 설정해야 깔끔해요
+                            )
 
                     ) {
                         Column(
-
-                            modifier = Modifier.padding(16.dp).heightIn(min = 500.dp)
+                            modifier = Modifier.padding(16.dp).heightIn(min = 550.dp)
                         ) {
                             // 📚 **책 목록 가로 스크롤**
                             LazyRow(
                                 modifier = Modifier.fillMaxWidth(),
-                                contentPadding = PaddingValues(horizontal = 16.dp, vertical = 8.dp),
+                                contentPadding = PaddingValues(horizontal = 16.dp, vertical = 16.dp),
                                 horizontalArrangement = Arrangement.Center
                             ) {
                                 items(books.take(5)) { book ->
@@ -169,25 +197,66 @@ fun VoiceToTextScreen(
                                     )
                                 }
                             }
+                            if (showResults && books.isNotEmpty() && type == 2 ) {
+                                // 📄 **페이지 네이션**
+                                Row(
+                                    horizontalArrangement = Arrangement.SpaceBetween,
+                                    modifier = Modifier.fillMaxWidth().padding(horizontal = 30.dp)
+                                ) {
+                                    Button(onClick = onPrevPage, enabled = currentPage > 1) {
+                                        Text(text = "이전 페이지")
+                                    }
 
-                            // 📄 **페이지 네이션**
-                            Row(
-                                horizontalArrangement = Arrangement.SpaceBetween,
-                                modifier = Modifier.fillMaxWidth().padding(horizontal = 30.dp)
-                            ) {
-                                Button(onClick = onPrevPage, enabled = currentPage > 1) {
-                                    Text(text = "이전 페이지")
+                                    Text(
+                                        text = "$currentPage / $totalPages",
+                                        fontSize = 20.sp,
+                                        color = Color.Black
+                                    )
+
+                                    Button(
+                                        onClick = onNextPage,
+                                        enabled = currentPage < totalPages
+                                    ) {
+                                        Text(text = "다음 페이지")
+                                    }
+                                }
+                            } else if(type==1){
+                                Box(
+                                    modifier = Modifier
+                                        .height(400.dp) // 기본 높이 설정
+                                        .fillMaxWidth()
+                                        .padding(30.dp)
+                                        .verticalScroll(scrollState) // 스크롤 가능하게 설정
+                                ) {
+                                    Text(
+                                        text = typingMessage.value,
+                                        fontSize = 50.sp,
+                                        color = Color.Gray
+                                    )
+                                }
+                                val temiController = TemiController(context)
+                                LaunchedEffect(key1 = message) {
+                                    if (message.isNotEmpty()) {
+                                        temiController.speak(message)
+                                    }
+                                }
+                            }else{
+                                Box(
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .height(420.dp), // 전체 크기 채우기
+                                    contentAlignment = Alignment.Center // 가운데 정렬
+                                ) {
+                                    Text(
+                                        text = "검색 내용이 없습니다. 대화버튼을 다시 눌러 주세요",
+                                        fontSize = 50.sp,
+                                        color = Color.Gray)
+
                                 }
 
-                                Text(
-                                    text = "$currentPage / $totalPages",
-                                    fontSize = 20.sp,
-                                    color = Color.Black
-                                )
 
-                                Button(onClick = onNextPage, enabled = currentPage < totalPages) {
-                                    Text(text = "다음 페이지")
-                                }
+
+
                             }
 
                             // ❌ **검색 결과 닫기 버튼**
@@ -218,14 +287,21 @@ fun VoiceToTextScreen(
                 val screenHeight = configuration.screenHeightDp.dp
 
                 val dialogWidth = min(screenWidth * 0.90f, 1000.dp)
-                val dialogHeight = min(screenHeight * 0.80f, 900.dp)
+                val dialogHeight = min(screenHeight * 0.70f, 700.dp)
 
                 Dialog(
                     onDismissRequest = { selectedBook = null },
                     properties = DialogProperties(usePlatformDefaultWidth = false)
                 ) {
                     Box(
-                        modifier = Modifier.fillMaxSize(),
+                        modifier = Modifier
+                            .background(Color.White, RoundedCornerShape(12.dp))
+                            .shadow(5.dp, RoundedCornerShape(12.dp)) // 그림자 추가
+                            .border(
+                                width = 16.dp,
+                                color = PeachBorder,
+                                shape = RoundedCornerShape(12.dp) // background와 동일한 shape으로 설정해야 깔끔해요
+                            ),
                         contentAlignment = Alignment.Center
                     ) {
                         Surface(
@@ -241,16 +317,36 @@ fun VoiceToTextScreen(
                                     .fillMaxSize()
                                     .padding(30.dp)
                             ) {
+
                                 val imageUrl = selectedBook!!.bImg.replace("http://", "https://")
-                                Image(
-                                    painter = rememberAsyncImagePainter(imageUrl),
-                                    contentDescription = "책 표지",
-                                    modifier = Modifier
+                                Column(
+                                                                        modifier = Modifier
                                         .width(250.dp)
-                                        .height(400.dp)
-                                        .shadow(4.dp, RoundedCornerShape(8.dp)),
-                                    contentScale = ContentScale.Crop
-                                )
+                                ) {
+                                    Image(
+                                        painter = rememberAsyncImagePainter(imageUrl),
+                                        contentDescription = "책 표지",
+                                        modifier = Modifier
+                                            .width(250.dp)
+                                            .height(400.dp)
+                                            .shadow(4.dp, RoundedCornerShape(8.dp)),
+                                        contentScale = ContentScale.Crop
+                                    )
+
+                                    Spacer(modifier = Modifier.height(10.dp)) // 이미지와 텍스트 간 간격
+
+                                    Text(
+                                        text = selectedBook!!.state, // 예: "대출 가능" 또는 "대출 중"
+                                        fontSize = 20.sp,
+                                        color = Color.DarkGray
+                                    )
+                                    Spacer(modifier = Modifier.height(10.dp)) // 이미지와 텍스트 간 간격
+                                    Text(
+                                        text = "대출은 시간차가 있을수 있습니다.", // 예: "대출 가능" 또는 "대출 중"
+                                        fontSize = 18.sp,
+                                        color = Color.Red
+                                    )
+                                }
 
 
 
@@ -275,8 +371,6 @@ fun VoiceToTextScreen(
                                         publisher = selectedBook!!.publisher,
                                         code = selectedBook!!.code,
                                         context = context
-
-
                                     )
                                     Spacer(modifier = Modifier.height(10.dp))
 
@@ -395,7 +489,7 @@ fun StudyRoomInfo(
                     TitleBox1(title = "본 도서는 어린이실 위치하고 있습니다.")
 
                 }
-
+                Spacer(modifier = Modifier.height(10.dp))
 
                 //도서관 위치정보
                 Row(
@@ -407,7 +501,7 @@ fun StudyRoomInfo(
 
                     } // ✅ 클릭 시 다이얼로그 표시
                 ) {
-                    TitleBox(title = "도서 위치정보")
+                    TitleBox2(title = "도서 위치정보")
 
                 }
 
@@ -436,21 +530,108 @@ fun StudyRoomInfo(
                         .padding(24.dp),
                     horizontalAlignment = Alignment.CenterHorizontally
                 ) {
-                    Text(
-                        text = "CODE 정보",
-                        fontSize = 22.sp,
-                        fontWeight = FontWeight.Bold
-                    )
-                    Spacer(modifier = Modifier.height(12.dp))
-                    Text(text = "이 책의 코드 값은 \"$code\" 입니다.")
-                    Spacer(modifier = Modifier.height(24.dp))
-                    Button(onClick = { showDialog = false }) {
-                        Text("닫기")
+
+
+                    // 1️⃣ 먼저 '-'로 자름
+                    val dashParts = code.split("-")
+                    val firstDashPart = dashParts.firstOrNull() ?: ""
+
+
+                    val dotParts = firstDashPart.split(".")
+                    val mainCodePart = dotParts.firstOrNull() ?: ""
+
+
+                    val letter = mainCodePart.filter { it in '가'..'힣' }   // 예: "아", "유"
+                    val number = mainCodePart.filter { it.isDigit() }      // 예: "001" → "1"
+                    val numberValue = number.toIntOrNull() ?: -1
+
+                    var message = ""
+                    var imageResId = R.drawable.default_image
+
+
+
+                    when (letter) {
+                        "아" -> {
+                            when (numberValue) {
+                                in 0..99 -> {
+                                    message = "000 총류로 이동하세요"
+                                    imageResId = R.drawable.a000
+                                }
+                                in 100..199 -> {
+                                    message = "100 철학으로 이동하세요"
+                                    imageResId = R.drawable.a100
+                                }
+                                in 300..399 -> {
+                                    message = "300 사회과학으로 이동하세요"
+                                    imageResId = R.drawable.a300
+                                }
+                                in 400..499 -> {
+                                    message = "400 자연과학으로 이동하세요"
+                                    imageResId = R.drawable.a400
+                                }
+                                in 500..599 -> {
+                                    message = "500 기술과학으로 이동하세요"
+                                    imageResId = R.drawable.a500
+                                }
+                                in 600..699 -> {
+                                    message = "600 예술로 이동하세요"
+                                    imageResId = R.drawable.a600
+                                }
+                                in 700..799 -> {
+                                    message = "700 언어로 이동하세요"
+                                    imageResId = R.drawable.a700
+                                }
+                                in 800..899 -> {
+                                    message = "800 아동문학으로 이동하세요"
+                                    imageResId = R.drawable.a800_a
+                                }
+                                in 900..999 -> {
+                                    message = "900 역사로 이동하세요"
+                                    imageResId = R.drawable.a900
+                                }
+                            }
+                        }
+                        "유" -> {
+                            when (numberValue) {
+                                in 800..899 -> {
+                                    message = "유아도서로 이동하세요"
+                                    imageResId = R.drawable.a800_b
+                                }
+                                in 900..999 -> {
+                                    message = "900 역사로 이동하세요"
+                                    imageResId = R.drawable.a900
+                                }
+                            }
+                        }
                     }
+
+
+
+
+//                    Text(
+//                        text = "도서정보 $code",
+//                        fontSize = 10.sp,
+//                        fontWeight = FontWeight.Bold
+//                    )
+
+//                    Text(text = "이 책의 코드 값은 \"$code\" 입니다.")
+                    Image(
+                        painter = painterResource(id = imageResId),
+                        contentDescription = null,
+                        modifier = Modifier
+                            .width(1400.dp)
+
+                    )
+                    Button(onClick = { showDialog = false }) {
+                        TitleBox1("닫기")
+                    }
+
+
+
                     val temiController = TemiController(context)
                     // 💬 Temi가 말하도록
                     LaunchedEffect(Unit) {
-                        temiController.speak("이 책의 코드 값은 $code 입니다.")
+                        temiController.speak(" $message ")
                     }
                 }
             }
@@ -560,6 +741,34 @@ fun TitleBox1(
             text = title,
             color = Color.White,
             fontSize = 20.sp,
+            modifier = Modifier.align(Alignment.Center)
+        )
+    }
+}
+
+@Composable
+fun TitleBox2(
+    title: String,
+    modifier: Modifier = Modifier,
+    onClick: (() -> Unit)? = null // nullable로 설정
+) {
+    val boxModifier = modifier
+//        .padding(16.dp)
+        .clip(RoundedCornerShape(20.dp))
+        .background(Color(0xFFFDAF17))
+        .then(
+            if (onClick != null) Modifier
+                .clickable { onClick() }
+                .shadow(6.dp, RoundedCornerShape(20.dp))
+            else Modifier
+        )
+        .padding(horizontal = 20.dp, vertical = 10.dp)
+
+    Box(modifier = boxModifier) {
+        Text(
+            text = title,
+            color = Color.White,
+            fontSize = 26.sp,
             modifier = Modifier.align(Alignment.Center)
         )
     }

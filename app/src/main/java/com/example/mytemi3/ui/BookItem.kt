@@ -44,7 +44,7 @@ fun BookItem(book: Book, onClick: () -> Unit = {}) {
                 painter = rememberAsyncImagePainter(model = imageUrl),
                 contentDescription = "Book Cover",
                 modifier = Modifier
-                    .height(220.dp)
+                    .height(150.dp)
                     .fillMaxWidth()
                     .background(Color.LightGray, shape = RoundedCornerShape(8.dp)),
                 contentScale = ContentScale.Crop
@@ -58,10 +58,11 @@ fun BookItem(book: Book, onClick: () -> Unit = {}) {
                 fontSize = 20.sp,
                 fontWeight = FontWeight.Bold,
                 maxLines = 2,
-                textAlign = TextAlign.Left
+                textAlign = TextAlign.Left,
+                modifier = Modifier.height(55.dp)
             )
 
-            Spacer(modifier = Modifier.height(20.dp))
+            Spacer(modifier = Modifier.height(15.dp))
 
             // 저자 정보
             Text(
