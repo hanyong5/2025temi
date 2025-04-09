@@ -27,6 +27,7 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.min
 import androidx.compose.ui.unit.sp
@@ -58,6 +59,7 @@ fun VoiceToTextScreen(
     var showResults by remember { mutableStateOf(false) } // ✅ 검색 후 결과 표시 여부 저장
     val PeachBorder = Color(0xFFFFE3B7)
     val scrollState = rememberScrollState()
+
 
     val typingMessage = remember { mutableStateOf("") }
 
@@ -220,7 +222,7 @@ fun VoiceToTextScreen(
                                         Text(text = "다음 페이지")
                                     }
                                 }
-                            } else if(type==1){
+                            } else if( showResults  && type === 1){
                                 Box(
                                     modifier = Modifier
                                         .height(400.dp) // 기본 높이 설정
@@ -516,19 +518,31 @@ fun StudyRoomInfo(
             onDismissRequest = { showDialog = false },
             properties = DialogProperties(usePlatformDefaultWidth = false)
         ){
+            val PeachBorder = Color(0xFFFFE3B7)
             Surface(
                 modifier = Modifier
                     .fillMaxSize()                 // ✅ 가로 전체 채우기
-                    .width(700.dp)             // ✅ 세로는 내용만큼
-                    .padding(30.dp),                 // ✅ 가장자리 여백
+                    .width(500.dp)             // ✅ 세로는 내용만큼
+                    .padding(30.dp)
+                    .background(Color.White, RoundedCornerShape(12.dp))
+                    .shadow(5.dp, RoundedCornerShape(12.dp)) // 그림자 추가
+                    .border(
+                        width = 16.dp,
+                        color = PeachBorder,
+                        shape = RoundedCornerShape(12.dp) // background와 동일한 shape으로 설정해야 깔끔해요
+                    )
+                ,                 // ✅ 가장자리 여백
                 shape = RoundedCornerShape(12.dp),
                 color = Color.White
             ) {
+
                 Column(
                     modifier = Modifier
                         .fillMaxWidth()              // ✅ 내부도 가로 전체
-                        .padding(24.dp),
-                    horizontalAlignment = Alignment.CenterHorizontally
+                        .padding(24.dp)
+
+
+
                 ) {
 
 
@@ -593,6 +607,34 @@ fun StudyRoomInfo(
                         }
                         "유" -> {
                             when (numberValue) {
+                                in 0..99 -> {
+                                    message = "유아 000번 입니다"
+                                    imageResId = R.drawable.a999
+                                }
+                                in 100..199 -> {
+                                    message = "유아 100번 입니다"
+                                    imageResId = R.drawable.a999
+                                }
+                                in 300..399 -> {
+                                    message = "유아 300번 입니다"
+                                    imageResId = R.drawable.a999
+                                }
+                                in 400..499 -> {
+                                    message = "유아 400번 입니다"
+                                    imageResId = R.drawable.a999
+                                }
+                                in 500..599 -> {
+                                    message = "유아 500번 입니다"
+                                    imageResId = R.drawable.a999
+                                }
+                                in 600..699 -> {
+                                    message = "유아 600번 입니다"
+                                    imageResId = R.drawable.a999
+                                }
+                                in 700..799 -> {
+                                    message = "유아 700번 입니다"
+                                    imageResId = R.drawable.a999
+                                }
                                 in 800..899 -> {
                                     message = "유아도서로 이동하세요"
                                     imageResId = R.drawable.a800_b
@@ -615,15 +657,50 @@ fun StudyRoomInfo(
 //                    )
 
 //                    Text(text = "이 책의 코드 값은 \"$code\" 입니다.")
-                    Image(
-                        painter = painterResource(id = imageResId),
-                        contentDescription = null,
-                        modifier = Modifier
-                            .width(1400.dp)
+                    val scrollState = rememberScrollState()
+                    Box(modifier = Modifier.fillMaxSize()) {
+                        // 스크롤 가능한 이미지 등 콘텐츠
+                        Column(
+                            modifier = Modifier
+                                .fillMaxSize()
+                                .verticalScroll(scrollState)
+                                .padding(bottom = 80.dp) // 버튼이 가리는 영역만큼 패딩
+                                .padding(horizontal = 30.dp)
+                        ) {
+                            Image(
+                                painter = painterResource(id = imageResId),
+                                contentDescription = null,
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .heightIn(min = 0.dp, max = Dp.Infinity),
+                                contentScale = ContentScale.FillWidth
+                            )
+                        }
 
-                    )
-                    Button(onClick = { showDialog = false }) {
-                        TitleBox1("닫기")
+                        // 하단 고정된 버튼 Row
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .align(Alignment.BottomCenter)
+                                .background(Color.White)
+                                .padding(horizontal = 30.dp, vertical = 16.dp),
+                            horizontalArrangement = Arrangement.SpaceBetween,
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Text(
+                                text = "$letter $numberValue : $code",
+                                fontSize = 30.sp
+                            )
+
+                            Button(
+                                onClick = { showDialog = false },
+                                colors = ButtonDefaults.buttonColors(
+                                    containerColor = Color.Red
+                                )
+                            ) {
+                                Text("확인", fontSize = 30.sp)
+                            }
+                        }
                     }
 
 
@@ -646,48 +723,48 @@ fun StudyRoomInfo(
 }
 
 
-@Composable
-fun BookLocationInfo(bookCode: String, context: Context) {
-    // 코드 값을 기반으로 location 및 row 설정
-    val (location, row) = getLocationAndRow(bookCode)
-    val temiController = TemiController(context)
-
-    Column(
-        modifier = Modifier.fillMaxWidth().padding(8.dp)
-    ) {
-        Text(
-            text = "위치: $location, 줄: $row",
-            fontSize = 20.sp,
-            textAlign = TextAlign.Start,
-            modifier = Modifier.fillMaxWidth()
-        )
-
-        if (location != "알 수 없음") {
-            Button(
-//                onClick = { temiController.moveToLocation(location) },
-
-                onClick = { temiController.speak("안내할 장소는 한성용 입니다. 입니다.") },
-                modifier = Modifier
-                    .wrapContentWidth()
-                    .padding(top = 8.dp),
-                colors = ButtonDefaults.buttonColors(
-                    containerColor = Color.Red, // 버튼 배경색
-                    contentColor = Color.White // 버튼 텍스트 색상
-                )
-            ) {
-                Text(text = "정확한 위치 보기", fontSize = 18.sp)
-            }
-        }
-    }
-}
+//@Composable
+//fun BookLocationInfo(bookCode: String, context: Context) {
+//    // 코드 값을 기반으로 location 및 row 설정
+//    val (location, row) = getLocationAndRow(bookCode)
+//    val temiController = TemiController(context)
+//
+//    Column(
+//        modifier = Modifier.fillMaxWidth().padding(8.dp)
+//    ) {
+//        Text(
+//            text = "위치: $location, 줄: $row",
+//            fontSize = 20.sp,
+//            textAlign = TextAlign.Start,
+//            modifier = Modifier.fillMaxWidth()
+//        )
+//
+//        if (location != "알 수 없음") {
+//            Button(
+////                onClick = { temiController.moveToLocation(location) },
+//
+//                onClick = { temiController.speak("안내할 장소는 한성용 입니다. 입니다.") },
+//                modifier = Modifier
+//                    .wrapContentWidth()
+//                    .padding(top = 8.dp),
+//                colors = ButtonDefaults.buttonColors(
+//                    containerColor = Color.Red, // 버튼 배경색
+//                    contentColor = Color.White // 버튼 텍스트 색상
+//                )
+//            ) {
+//                Text(text = "정확한 위치 보기", fontSize = 18.sp)
+//            }
+//        }
+//    }
+//}
 
 // 코드 값을 분석하여 location과 row를 반환하는 함수
-fun getLocationAndRow(code: String): Pair<String, String> {
-    return when (code) {
-        "아457-ㄷ57ㄱ=2" -> "입구" to "3줄"
-        else -> "알 수 없음" to "알 수 없음"
-    }
-}
+//fun getLocationAndRow(code: String): Pair<String, String> {
+//    return when (code) {
+//        "아457-ㄷ57ㄱ=2" -> "입구" to "3줄"
+//        else -> "알 수 없음" to "알 수 없음"
+//    }
+//}
 
 @Composable
 fun TitleBox(

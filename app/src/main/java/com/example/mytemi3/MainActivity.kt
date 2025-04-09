@@ -72,11 +72,11 @@ class MainActivity : ComponentActivity() {
 
 
         //최종삭제
-        recognizedText = "공룡찾아줘"
-        savedKeyword.value = "공룡찾아줘"
-        currentPage.value = 1
-
-        fetchDataFromServer("공룡찾아줘")
+//        recognizedText = "공룡찾아줘"
+//        savedKeyword.value = "공룡찾아줘"
+//        currentPage.value = 1
+//
+//        fetchDataFromServer("공룡찾아줘")
 
 
         setContent {
@@ -250,5 +250,6 @@ class MainActivity : ComponentActivity() {
         totalPages.value = 1
         savedKeyword.value = ""
         isLoading.value = false
+        responseType.value = 2
     }
 }
